@@ -1,9 +1,6 @@
-
-import fetch from 'node-fetch';
-
 export default async function handler(req, res) {
   try {
-    const loginResponse = await fetch("https://la5.fusionsolar.huawei.com/thirdData/login", {
+    const loginRes = await fetch("https://la5.fusionsolar.huawei.com/thirdData/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -14,17 +11,14 @@ export default async function handler(req, res) {
       })
     });
 
-    const token = loginResponse.headers.get("x-xsrf-token") || loginResponse.headers.get("xsrf-token");
-    const rawCookies = loginResponse.headers.raw()["set-cookie"];
-    const cookies = rawCookies.map(c => c.split(";")[0]).join("; ");
+    const token = loginRes.headers.get("xsrf-token");
+    const cookies = loginRes.headers.get("set-cookie");
 
     if (!token || !cookies) {
       return res.status(401).json({ error: "Token ou cookies não recebidos" });
     }
 
-    const stationCodes = ["NE=33930879", "NE=34859074", "NE=34859126", "NE=34859026", "NE=34917626"];
-
-    const kpiResponse = await fetch("https://la5.fusionsolar.huawei.com/thirdData/getStationRealKpi", {
+    const stationRes = await fetch("https://la5.fusionsolar.huawei.com/thirdData/getStationRealKpi", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,14 +26,20 @@ export default async function handler(req, res) {
         "Cookie": cookies
       },
       body: JSON.stringify({
-        stationCodes
+        stationCodes: [
+          "NE=33930879",
+          "NE=34859074",
+          "NE=34859126",
+          "NE=34859026",
+          "NE=34917626"
+        ]
       })
     });
 
-    const data = await kpiResponse.json();
+    const result = await stationRes.json();
 
-    if (!data || !data.data) {
-      return res.status(500).json({ error: "Falha ao obter dados da API da Huawei", response: data });
+    if (!result.success || !result.data) {
+      return res.status(500).json({ error: "Falha ao obter dados da API da Huawei", response: result });
     }
 
     const nomesUsinas = {
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       "34917626": "UFV_GUA_SP (Guarantã)"
     };
 
-    const result = data.data.map(item => {
+    const data = result.data.map(item => {
       const codeClean = item.stationCode.replace("NE=", "");
       const statusCode = item.dataItemMap?.real_health_state;
       return {
@@ -60,9 +60,10 @@ export default async function handler(req, res) {
       };
     });
 
-    res.status(200).json(result);
+    return res.status(200).json(data);
+
   } catch (err) {
-    console.error("Erro no proxy:", err);
-    res.status(500).json({ error: "Erro interno", details: err.message });
+    console.error("Erro geral:", err);
+    return res.status(500).json({ error: "Erro interno", details: err.message });
   }
 }
