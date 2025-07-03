@@ -34,14 +34,8 @@ export default async function handler(req, res) {
         "Cookie": cookies
       },
       body: JSON.stringify({
-        stationCodes: [
-          "NE=33930879",
-          "NE=34859074",
-          "NE=34859126",
-          "NE=34859026",
-          "NE=34917626"
-        ]
-      })
+  stationCodes: "NE=33930879,NE=34859074,NE=34859126,NE=34859026,NE=34917626"
+})
     });
 
     const result = await stationRes.json();
