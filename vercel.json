@@ -1,0 +1,10 @@
+
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/huawei-status.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/huawei-status", "dest": "api/huawei-status.js" }
+  ]
+}
